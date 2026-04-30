@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 
+type SyncResult = {
+  status: string;
+  totalFound: number;
+  totalDownloaded: number;
+  totalSkipped: number;
+  totalFailed: number;
+  message?: string;
+};
+
 export default function StatementSyncPage() {
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [month, setMonth] = useState(
@@ -10,7 +19,7 @@ export default function StatementSyncPage() {
   const [server, setServer] = useState("ALL");
   const [force, setForce] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState("");
 
   async function handleSync(event: React.FormEvent<HTMLFormElement>) {
@@ -52,7 +61,7 @@ export default function StatementSyncPage() {
 
       <form
         onSubmit={handleSync}
-        className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div className="grid gap-5 md:grid-cols-4">
           <div>
@@ -60,7 +69,7 @@ export default function StatementSyncPage() {
             <input
               value={year}
               onChange={(event) => setYear(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-100"
+              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
             />
           </div>
 
@@ -69,7 +78,7 @@ export default function StatementSyncPage() {
             <input
               value={month}
               onChange={(event) => setMonth(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-100"
+              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
             />
           </div>
 
@@ -78,7 +87,7 @@ export default function StatementSyncPage() {
             <select
               value={server}
               onChange={(event) => setServer(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-100"
+              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
             >
               <option value="ALL">ALL</option>
               <option value="MT4IN1">MT4IN1</option>
@@ -95,7 +104,7 @@ export default function StatementSyncPage() {
           </div>
 
           <div className="flex items-end">
-            <label className="flex h-[46px] w-full items-center gap-3 rounded-2xl border border-slate-200 px-4 text-sm text-slate-700">
+            <label className="flex h-[46px] w-full items-center gap-3 rounded-lg border border-slate-200 px-4 text-sm text-slate-700">
               <input
                 type="checkbox"
                 checked={force}
@@ -109,7 +118,7 @@ export default function StatementSyncPage() {
         <div className="mt-6 flex items-center gap-3">
           <button
             disabled={loading}
-            className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+            className="rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
           >
             {loading ? "Syncing..." : "Start Sync"}
           </button>
@@ -117,16 +126,16 @@ export default function StatementSyncPage() {
       </form>
 
       {error ? (
-        <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">
+        <div className="rounded-xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">
           {error}
         </div>
       ) : null}
 
       {result ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="font-semibold text-slate-950">Sync Result</h3>
           {result.status === "empty" ? (
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               {result.message ||
                 "Tidak ada file statement yang cocok. Cek periode, server, dan S3 prefix."}
             </div>
@@ -139,7 +148,7 @@ export default function StatementSyncPage() {
               ["Skipped", result.totalSkipped],
               ["Failed", result.totalFailed],
             ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl bg-slate-50 p-4">
+              <div key={label} className="rounded-lg bg-slate-50 p-4">
                 <p className="text-xs text-slate-500">{label}</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{value}</p>
               </div>

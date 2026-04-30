@@ -7,7 +7,6 @@ const schema = z.object({
   title: z.string().min(1),
   year: z.string().regex(/^\d{4}$/),
   month: z.string().regex(/^\d{2}$/),
-  server: z.string().optional(),
   accounts: z.array(z.string()).min(1),
 });
 
@@ -29,9 +28,8 @@ export async function POST(req: Request) {
     title: parsed.data.title,
     year: parsed.data.year,
     month: parsed.data.month,
-    server: parsed.data.server === "ALL" ? undefined : parsed.data.server,
     accounts: parsed.data.accounts,
-    createdBy: user.email,
+    createdBy: user.username,
   });
 
   return NextResponse.json(result);

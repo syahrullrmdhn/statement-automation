@@ -63,8 +63,35 @@ Gunakan kredensial default:
 - **Dashboard**: Overview sistem dengan statistik
 - **Statement Sync**: Sinkronisasi file dari S3 ke local storage
 - **Export Statement**: Generate ZIP berdasarkan periode dan daftar account
+- **Auto Extract Account**: Bisa paste isi email dealer lalu account number diekstrak otomatis
+- **User Management**: Kelola user, role, status aktif, dan reset password
 - **Export History**: Riwayat proses export
 - **Settings**: Informasi konfigurasi sistem
+
+## Automation
+
+### 1. Auto sync jam 07:00 Asia/Jakarta
+
+Disediakan endpoint cron:
+
+`POST /api/cron/sync-daily`
+
+Header wajib:
+
+- `x-cron-secret: <CRON_SECRET>`
+
+Env yang perlu ditambahkan di `.env.local`:
+
+```env
+CRON_SECRET="ganti_dengan_secret_aman"
+```
+
+Contoh setup external cron (server/cPanel/cron-job.org):
+
+- Schedule: `0 7 * * *` (Asia/Jakarta)
+- Method: `POST`
+- URL: `https://your-domain.com/api/cron/sync-daily`
+- Header: `x-cron-secret: <CRON_SECRET>`
 
 ## Stack Teknologi
 

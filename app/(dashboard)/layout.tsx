@@ -7,6 +7,7 @@ import {
   History,
   LayoutDashboard,
   Settings,
+  Users,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { LogoutButton } from "@/components/logout-button";
@@ -16,6 +17,7 @@ const menuItems = [
   { label: "Statement Sync", href: "/statement/sync", icon: Cloud },
   { label: "Export Statement", href: "/statement/export", icon: Download },
   { label: "Export History", href: "/statement/history", icon: History },
+  { label: "User Management", href: "/users", icon: Users },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -34,7 +36,7 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-slate-50">
       <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-slate-200 bg-white px-5 py-6 lg:block">
         <div className="flex items-center gap-3 px-2">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-sm font-bold text-white">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 text-sm font-bold text-white">
             SA
           </div>
           <div>
@@ -50,7 +52,7 @@ export default async function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
               >
                 <Icon className="h-5 w-5" />
                 {item.label}
@@ -60,7 +62,7 @@ export default async function DashboardLayout({
         </nav>
 
         <div className="absolute bottom-6 left-5 right-5">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-semibold text-slate-950">{user.name}</p>
             <p className="mt-1 truncate text-xs text-slate-500">@{user.username}</p>
             <div className="mt-4">
@@ -81,7 +83,7 @@ export default async function DashboardLayout({
                 Statement Automation
               </h1>
             </div>
-            <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 md:flex">
+            <div className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 md:flex">
               <BarChart3 className="h-4 w-4" />
               System Online
             </div>

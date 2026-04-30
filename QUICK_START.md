@@ -122,6 +122,11 @@ Jika status `empty`, artinya file tidak cocok dengan filter atau prefix. Cek:
 3. Click **Export**
 4. Download the generated ZIP file
 
+Tip cepat:
+- Paste isi email dealer ke kolom **Sumber Email Dealer**
+- Klik **Ambil Account Otomatis**
+- Sistem akan ekstrak account number otomatis tanpa input manual satu-satu
+
 ### 5. View Export History
 1. Navigate to **Export History**
 2. See all previous export jobs
@@ -220,6 +225,21 @@ npx tsx prisma/seed.ts
 4. Use production AWS credentials with proper IAM roles
 5. Enable `secure` flag on cookies (requires HTTPS)
 6. Set up proper backup and monitoring
+
+### Daily Auto Sync (07:00 Asia/Jakarta)
+
+1. Tambahkan env:
+
+```env
+CRON_SECRET="ganti_dengan_secret_aman"
+```
+
+2. Setup external cron untuk call endpoint:
+
+- URL: `/api/cron/sync-daily`
+- Method: `POST`
+- Header: `x-cron-secret: <CRON_SECRET>`
+- Schedule: `0 7 * * *` timezone Asia/Jakarta
 
 ## Support
 

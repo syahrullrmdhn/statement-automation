@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     month: parsed.data.month,
     server: parsed.data.server === "ALL" ? undefined : parsed.data.server,
     force: parsed.data.force,
-    createdBy: user.email,
+    createdBy: user.username,
   });
 
   return NextResponse.json(result);
