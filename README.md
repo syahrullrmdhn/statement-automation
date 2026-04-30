@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Statement Automation System
 
-## Getting Started
+Aplikasi web internal untuk membantu proses sinkronisasi dan ekspor file statement dari Amazon S3.
 
-First, run the development server:
+## Setup Instruction
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Environment Variables
+
+Environment variables sudah dikonfigurasi di file `.env.local`:
+- Database: PostgreSQL di 195.88.211.210
+- AWS S3: Bucket `petisejuk` dengan prefix statement
+
+### 3. Setup Database
+
+Jalankan migration Prisma:
+
+```bash
+npx dotenv -e .env.local -- npx prisma migrate dev --name init
+```
+
+Generate Prisma client:
+
+```bash
+npx prisma generate
+```
+
+Seed default admin user:
+
+```bash
+npx dotenv -e .env.local -- npx prisma db seed
+```
+
+### 4. Start Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka browser di `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Gunakan kredensial default:
+- **Username**: `syahrul`
+- **Password**: `syahrul2026`
 
-## Learn More
+## Features
 
-To learn more about Next.js, take a look at the following resources:
+- **Dashboard**: Overview sistem dengan statistik
+- **Statement Sync**: Sinkronisasi file dari S3 ke local storage
+- **Export Statement**: Generate ZIP berdasarkan periode dan daftar account
+- **Export History**: Riwayat proses export
+- **Settings**: Informasi konfigurasi sistem
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack Teknologi
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next.js 16 App Router
+- TypeScript
+- Tailwind CSS 4
+- Prisma ORM
+- PostgreSQL
+- AWS SDK v3 (S3)
+- JWT Authentication
 
-## Deploy on Vercel
+## Catatan
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Credentials database dan S3 sudah disertakan dalam `.env.local`
+- File `.env.local` sudah diignore dari Git
+- Local storage akan dibuat otomatis di folder `./storage/`
