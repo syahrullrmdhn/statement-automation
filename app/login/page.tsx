@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -93,14 +92,11 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="flex justify-center mb-10">
-            <div className="relative w-32 h-32">
-              <Image
+            <div className="w-32 h-32 flex items-center justify-center">
+              <img
                 src="/3S_Logogram.png"
-                sizes="128px"
                 alt="3S Logo"
-                fill
-                className="object-contain"
-                priority
+                className="w-full h-full object-contain"
               />
             </div>
           </div>

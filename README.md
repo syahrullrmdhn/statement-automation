@@ -13,8 +13,10 @@ npm install
 ### 2. Environment Variables
 
 Environment variables sudah dikonfigurasi di file `.env.local`:
-- Database: PostgreSQL di 195.88.211.210
-- AWS S3: Bucket `petisejuk` dengan prefix statement
+- Database: Supabase PostgreSQL (pooler)
+- AWS S3: Bucket `petisejuk`
+- AWS Region: `ap-southeast-3`
+- S3 prefix utama: `STATEMENT/`
 
 ### 3. Setup Database
 
@@ -33,7 +35,7 @@ npx prisma generate
 Seed default admin user:
 
 ```bash
-npx dotenv -e .env.local -- npx prisma db seed
+npx tsx prisma/seed.ts
 ```
 
 ### 4. Start Development Server
@@ -43,6 +45,12 @@ npm run dev
 ```
 
 Buka browser di `http://localhost:3000`
+
+Jika muncul pesan "Another next dev server is already running", stop dulu proses lama:
+
+```bash
+pkill -f "next dev"
+```
 
 ### 5. Login
 
@@ -73,3 +81,5 @@ Gunakan kredensial default:
 - Credentials database dan S3 sudah disertakan dalam `.env.local`
 - File `.env.local` sudah diignore dari Git
 - Local storage akan dibuat otomatis di folder `./storage/`
+- URL dashboard yang benar adalah `/dashboard` (bukan `/(dashboard)`)
+- Jika hasil sync `empty`, cek parameter year/month/server dan prefix S3

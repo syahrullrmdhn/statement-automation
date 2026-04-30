@@ -125,6 +125,12 @@ export default function StatementSyncPage() {
       {result ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="font-semibold text-slate-950">Sync Result</h3>
+          {result.status === "empty" ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {result.message ||
+                "Tidak ada file statement yang cocok. Cek periode, server, dan S3 prefix."}
+            </div>
+          ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-5">
             {[
               ["Status", result.status],

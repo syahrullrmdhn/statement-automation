@@ -12,7 +12,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { LogoutButton } from "@/components/logout-button";
 
 const menuItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Statement Sync", href: "/statement/sync", icon: Cloud },
   { label: "Export Statement", href: "/statement/export", icon: Download },
   { label: "Export History", href: "/statement/history", icon: History },

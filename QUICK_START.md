@@ -54,8 +54,13 @@ npx dotenv -e .env.local -- npx prisma migrate dev --name init
 npx prisma generate
 
 # Seed database with default user
-npx dotenv -e .env.local -- npx prisma db seed
+npx tsx prisma/seed.ts
 ```
+
+Catatan env penting untuk setup saat ini:
+- `AWS_REGION="ap-southeast-3"`
+- `S3_STATEMENT_PREFIX="STATEMENT/"`
+- Dashboard URL: `/dashboard`
 
 #### 4. Create Storage Directories
 ```bash
@@ -65,6 +70,13 @@ mkdir -p storage/exports
 
 #### 5. Start Development Server
 ```bash
+npm run dev
+```
+
+Jika muncul "Another next dev server is already running":
+
+```bash
+pkill -f "next dev"
 npm run dev
 ```
 
@@ -94,6 +106,11 @@ The dashboard shows:
 3. Optionally check **Force Resync** to redownload files
 4. Click **Start Sync**
 5. View sync results immediately
+
+Jika status `empty`, artinya file tidak cocok dengan filter atau prefix. Cek:
+- Year/bulan sesuai (contoh: `2026` dan `04`)
+- Server benar (contoh: `MT4IN1`, `MT5IN2`)
+- Prefix S3 benar (`STATEMENT/`)
 
 ### 4. Export Statements
 1. Navigate to **Export Statement**
@@ -142,7 +159,7 @@ npx dotenv -e .env.local -- npx prisma migrate reset
 npx prisma generate
 
 # Seed database again
-npx dotenv -e .env.local -- npx prisma db seed
+npx tsx prisma/seed.ts
 ```
 
 ## Troubleshooting
@@ -176,7 +193,7 @@ npx prisma generate
 # Or use incognito mode
 
 # Re-seed database with fresh user
-npx dotenv -e .env.local -- npx prisma db seed
+npx tsx prisma/seed.ts
 ```
 
 ## Development Tips

@@ -3,13 +3,24 @@ export function matchesStatementPeriod(
   year: string,
   month: string
 ) {
+  const lower = fileName.toLowerCase();
+
+  if (!lower.endsWith(".zip")) {
+    return false;
+  }
+
   const compact = `${year}${month}`;
   const dotted = `${year}.${month}`;
 
-  return (
-    fileName.toLowerCase().endsWith(".zip") &&
-    (fileName.includes(compact) || fileName.includes(dotted))
-  );
+  const hasCompact = lower.includes(compact);
+  const hasDotted = lower.includes(dotted);
+
+  if (hasCompact || hasDotted) {
+    return true;
+  }
+
+  const monthPattern = new RegExp(`^${year}[.-]?${month}[.-]?\\d{2}`);
+  return monthPattern.test(lower);
 }
 
 export function buildStatementFileName(account: string) {
