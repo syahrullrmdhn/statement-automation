@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { SafeLogo } from "@/components/ui/safe-logo";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("syahrul");
-  const [password, setPassword] = useState("syahrul2026");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const canSubmit = username.trim().length > 0 && password.trim().length > 0 && !loading;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,9 +43,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex">
+    <main className="flex min-h-screen">
       {/* Left Panel - Gradient & Welcome */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 overflow-hidden">
+      <div className="relative hidden overflow-hidden bg-gradient-to-br from-slate-900 via-sky-800 to-sky-700 lg:flex lg:w-1/2">
         {/* Decorative geometric elements */}
         <div className="absolute -top-20 -right-20 w-96 h-96 border border-white/10 rounded-full" />
         <div className="absolute -bottom-32 -left-16 w-[32rem] h-[32rem] border border-white/10 rounded-full" />
@@ -66,17 +68,13 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-col justify-center px-16 py-20 h-full">
           <div className="max-w-lg">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-10">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
+            <div className="mb-10 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/25 bg-white/20 p-2 backdrop-blur-sm">
+              <SafeLogo size={52} className="h-full w-full object-contain" />
             </div>
-            <h1 className="text-5xl font-bold text-white leading-tight tracking-tight">
+            <h1 className="text-5xl font-bold leading-tight tracking-tight text-white">
               Hello, welcome!
             </h1>
-            <p className="mt-6 text-lg text-blue-100 leading-relaxed max-w-md">
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-sky-100">
               Masuk untuk mengelola sinkronisasi dan ekspor statement dengan mudah dan cepat.
             </p>
             <div className="mt-12 flex items-center gap-3 text-white/60 text-sm">
@@ -88,23 +86,19 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 py-12 bg-white">
-        <div className="w-full max-w-sm">
+      <div className="flex w-full items-center justify-center bg-gradient-to-b from-white to-slate-50 px-8 py-12 lg:w-1/2">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-7 shadow-[0_20px_45px_-30px_rgba(15,23,42,0.45)]">
           {/* Logo */}
           <div className="flex justify-center mb-10">
-            <div className="w-32 h-32 flex items-center justify-center">
-              <img
-                src="/3S_Logogram.png"
-                alt="3S Logo"
-                className="w-full h-full object-contain"
-              />
+            <div className="flex h-32 w-32 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2">
+              <SafeLogo size={112} className="h-full w-full object-contain" />
             </div>
           </div>
 
-          <h2 className="text-2xl font-semibold text-slate-900 text-center">
+          <h2 className="text-center text-2xl font-semibold text-slate-900">
             Sign In
           </h2>
-          <p className="mt-2 text-sm text-slate-500 text-center">
+          <p className="mt-2 text-center text-sm text-slate-500">
             Masukkan kredensial Anda untuk melanjutkan
           </p>
 
@@ -114,13 +108,14 @@ export default function LoginPage() {
                 Username
               </label>
               <div className="mt-2 relative">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-full" />
+                <div className="absolute bottom-0 left-0 top-0 w-1 rounded-full bg-sky-700" />
                 <input
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  className="w-full border-b border-slate-200 bg-transparent py-3 pl-4 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500"
+                  className="w-full border-b border-slate-200 bg-transparent py-3 pl-4 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-700"
                   placeholder="Masukkan username"
                   type="text"
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -130,13 +125,14 @@ export default function LoginPage() {
                 Password
               </label>
               <div className="mt-2 relative">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-full" />
+                <div className="absolute bottom-0 left-0 top-0 w-1 rounded-full bg-sky-700" />
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  className="w-full border-b border-slate-200 bg-transparent py-3 pl-4 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500"
+                  className="w-full border-b border-slate-200 bg-transparent py-3 pl-4 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-700"
                   placeholder="Masukkan password"
                   type="password"
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -147,22 +143,18 @@ export default function LoginPage() {
               </div>
             ) : null}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Memproses..." : "Login"}
-            </button>
-
-            <div className="text-center">
               <button
-                type="button"
-                className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:border-slate-300 w-full"
+                type="submit"
+                disabled={!canSubmit}
+                className="w-full rounded-lg bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Sign up
+                {loading ? "Memproses..." : "Login"}
               </button>
-            </div>
+
+            <p className="text-center text-xs text-slate-500">
+              Gunakan username dan password yang terdaftar.
+            </p>
+
           </form>
         </div>
       </div>

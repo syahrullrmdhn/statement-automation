@@ -26,3 +26,17 @@ export function matchesStatementPeriod(
 export function buildStatementFileName(account: string) {
   return `${account}_mail.htm`;
 }
+
+export function extractStatementDateToken(fileNameOrKey: string) {
+  const compactMatch = fileNameOrKey.match(/(\d{8})/);
+  if (compactMatch) {
+    return compactMatch[1];
+  }
+
+  const dottedMatch = fileNameOrKey.match(/(\d{4})\.(\d{2})\.(\d{2})/);
+  if (dottedMatch) {
+    return `${dottedMatch[1]}${dottedMatch[2]}${dottedMatch[3]}`;
+  }
+
+  return null;
+}

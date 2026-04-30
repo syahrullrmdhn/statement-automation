@@ -11,6 +11,15 @@ type SyncParams = {
   server?: string;
   force?: boolean;
   createdBy?: string;
+  onJobCreated?: (jobId: string) => void;
+};
+
+type S3Candidate = {
+  key: string;
+  fileName: string;
+  etag?: string;
+  size: number;
+  lastModified?: Date;
 };
 
 export async function syncStatementFromS3(params: SyncParams) {
@@ -31,11 +40,14 @@ export async function syncStatementFromS3(params: SyncParams) {
     },
   });
 
+  params.onJobCreated?.(syncJob.id.toString());
+
   let totalFound = 0;
   let totalDownloaded = 0;
   let totalSkipped = 0;
   let totalFailed = 0;
   let usedPrefix = prefixes[0] || "";
+  const candidates: S3Candidate[] = [];
 
   try {
     for (const prefix of prefixes) {
@@ -72,63 +84,13 @@ export async function syncStatementFromS3(params: SyncParams) {
             continue;
           }
 
-          totalFound++;
-
-          const etag = object.ETag?.replaceAll('"', "");
-          const existing = await prisma.statementFile.findUnique({
-            where: { s3Key: key },
+          candidates.push({
+            key,
+            fileName,
+            etag: object.ETag?.replaceAll('"', ""),
+            size: Number(object.Size || 0),
+            lastModified: object.LastModified,
           });
-
-          const unchanged =
-            existing &&
-            existing.s3Etag === etag &&
-            Number(existing.fileSize || 0) === Number(object.Size || 0);
-
-          if (unchanged && !params.force) {
-            totalSkipped++;
-            continue;
-          }
-
-          try {
-            const serverName = extractServerName(key, prefix);
-            const localPath = join(
-              storagePath,
-              "s3-cache",
-              serverName,
-              params.year,
-              params.month,
-              fileName
-            );
-
-            await downloadS3Object({ bucket, key, localPath });
-
-            await prisma.statementFile.upsert({
-              where: { s3Key: key },
-              create: {
-                serverName,
-                periodYear: params.year,
-                periodMonth: params.month,
-                s3Bucket: bucket,
-                s3Key: key,
-                s3Etag: etag,
-                s3LastModified: object.LastModified,
-                fileSize: BigInt(object.Size || 0),
-                localPath,
-                syncStatus: "synced",
-              },
-              update: {
-                s3Etag: etag,
-                s3LastModified: object.LastModified,
-                fileSize: BigInt(object.Size || 0),
-                localPath,
-                syncStatus: "synced",
-              },
-            });
-
-            totalDownloaded++;
-          } catch {
-            totalFailed++;
-          }
         }
 
         continuationToken = result.NextContinuationToken;
@@ -137,6 +99,82 @@ export async function syncStatementFromS3(params: SyncParams) {
       if (seenObjects > 0) {
         usedPrefix = prefix;
         break;
+      }
+    }
+
+    totalFound = candidates.length;
+    await prisma.syncJob.update({
+      where: { id: syncJob.id },
+      data: {
+        totalFound,
+      },
+    });
+
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      const existing = await prisma.statementFile.findUnique({
+        where: { s3Key: candidate.key },
+      });
+
+      const unchanged =
+        existing &&
+        existing.s3Etag === candidate.etag &&
+        Number(existing.fileSize || 0) === candidate.size;
+
+      if (unchanged && !params.force) {
+        totalSkipped++;
+      } else {
+        try {
+          const serverName = extractServerName(candidate.key, usedPrefix);
+          const localPath = join(
+            storagePath,
+            "s3-cache",
+            serverName,
+            params.year,
+            params.month,
+            candidate.fileName
+          );
+
+          await downloadS3Object({ bucket, key: candidate.key, localPath });
+
+          await prisma.statementFile.upsert({
+            where: { s3Key: candidate.key },
+            create: {
+              serverName,
+              periodYear: params.year,
+              periodMonth: params.month,
+              s3Bucket: bucket,
+              s3Key: candidate.key,
+              s3Etag: candidate.etag,
+              s3LastModified: candidate.lastModified,
+              fileSize: BigInt(candidate.size),
+              localPath,
+              syncStatus: "synced",
+            },
+            update: {
+              s3Etag: candidate.etag,
+              s3LastModified: candidate.lastModified,
+              fileSize: BigInt(candidate.size),
+              localPath,
+              syncStatus: "synced",
+            },
+          });
+
+          totalDownloaded++;
+        } catch {
+          totalFailed++;
+        }
+      }
+
+      if ((i + 1) % 10 === 0 || i + 1 === candidates.length) {
+        await prisma.syncJob.update({
+          where: { id: syncJob.id },
+          data: {
+            totalDownloaded,
+            totalSkipped,
+            totalFailed,
+          },
+        });
       }
     }
 

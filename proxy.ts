@@ -16,14 +16,23 @@ function getJwtSecret() {
 const publicPaths = [
   "/login",
   "/api/auth/login",
+  "/api/auth/logout",
+  "/api/auth/me",
   "/_next",
   "/favicon.ico",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/3S_Logogram.png",
 ];
 
-export async function middleware(req: NextRequest) {
+const publicFilePattern = /\.(png|jpg|jpeg|gif|svg|webp|ico|txt|xml|css|js|map)$/i;
+
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
+  const isPublicPath =
+    publicPaths.some((path) => pathname.startsWith(path)) ||
+    publicFilePattern.test(pathname);
 
   if (isPublicPath) {
     return NextResponse.next();

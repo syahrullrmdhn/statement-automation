@@ -14,13 +14,13 @@ export async function POST(
 ) {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Anda tidak memiliki akses untuk reset password user." }, { status: 403 });
   }
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+    return NextResponse.json({ message: "Password baru belum sesuai. Minimal 8 karakter." }, { status: 400 });
   }
 
   const { id } = await context.params;
@@ -32,5 +32,5 @@ export async function POST(
     data: { passwordHash },
   });
 
-  return NextResponse.json({ message: "Password updated" });
+  return NextResponse.json({ message: "Password user berhasil diperbarui." });
 }

@@ -24,13 +24,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Data input sinkronisasi belum lengkap atau formatnya belum sesuai." }, { status: 400 });
   }
 
-  const result = await syncStatementFromS3({
+  let createdJobId = "";
+
+  const jobPromise = syncStatementFromS3({
     year: parsed.data.year,
     month: parsed.data.month,
     server: parsed.data.server === "ALL" ? undefined : parsed.data.server,
     force: parsed.data.force,
     createdBy: user.username,
+    onJobCreated: (jobId) => {
+      createdJobId = jobId;
+    },
   });
 
-  return NextResponse.json(result);
+  void jobPromise.catch(() => null);
+
+  const start = Date.now();
+  while (!createdJobId && Date.now() - start < 5000) {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  }
+
+  return NextResponse.json({
+    jobId: createdJobId || null,
+    done: false,
+    message: "Sinkronisasi dimulai. Anda bisa pindah halaman.",
+  });
 }

@@ -1,6 +1,6 @@
 export default function SettingsPage() {
-  const dbUrl = process.env.DATABASE_URL || "";
-  const dbHost = dbUrl ? new URL(dbUrl).host : "-";
+  const hasDatabase = Boolean(process.env.DATABASE_URL);
+  const hasS3 = Boolean(process.env.S3_BUCKET) && Boolean(process.env.AWS_REGION);
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -43,9 +43,9 @@ export default function SettingsPage() {
               <dt className="text-slate-500">Provider</dt>
               <dd className="font-medium text-slate-800">PostgreSQL</dd>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-500">Host</dt>
-              <dd className="truncate font-medium text-slate-800">{dbHost || "-"}</dd>
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-500">Status</dt>
+              <dd className="font-medium text-slate-800">{hasDatabase ? "Configured" : "Not set"}</dd>
             </div>
           </dl>
         </div>
@@ -59,16 +59,8 @@ export default function SettingsPage() {
           <h3 className="mt-2 text-lg font-semibold text-slate-950">Koneksi AWS S3</h3>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <dt className="text-slate-500">Region</dt>
-              <dd className="font-medium text-slate-800">{process.env.AWS_REGION || "-"}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-500">Bucket</dt>
-              <dd className="truncate font-medium text-slate-800">{process.env.S3_BUCKET || "-"}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-slate-500">Prefix</dt>
-              <dd className="truncate font-medium text-slate-800">{process.env.S3_STATEMENT_PREFIX || "-"}</dd>
+              <dt className="text-slate-500">Status</dt>
+              <dd className="font-medium text-slate-800">{hasS3 ? "Configured" : "Not set"}</dd>
             </div>
           </dl>
         </div>
@@ -100,14 +92,6 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-950">Catatan</h3>
-        <ul className="mt-3 space-y-1 text-sm text-slate-600">
-          <li>- Semua credential tetap di `.env.local` dan tidak di-commit.</li>
-          <li>- Route dashboard utama: `/dashboard`.</li>
-          <li>- Sync `empty` berarti file tidak cocok filter/prefix.</li>
-        </ul>
-      </section>
     </div>
   );
 }

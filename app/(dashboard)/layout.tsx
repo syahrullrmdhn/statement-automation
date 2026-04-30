@@ -1,25 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  BarChart3,
-  Cloud,
-  Download,
-  History,
-  LayoutDashboard,
-  Settings,
-  Users,
-} from "lucide-react";
+import { BarChart3 } from "lucide-react";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/session";
 import { LogoutButton } from "@/components/logout-button";
-
-const menuItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Statement Sync", href: "/statement/sync", icon: Cloud },
-  { label: "Export Statement", href: "/statement/export", icon: Download },
-  { label: "Export History", href: "/statement/history", icon: History },
-  { label: "User Management", href: "/users", icon: Users },
-  { label: "Settings", href: "/settings", icon: Settings },
-];
+import { DashboardNav } from "@/components/dashboard-nav";
+import { SafeLogo } from "@/components/ui/safe-logo";
 
 export default async function DashboardLayout({
   children,
@@ -36,8 +21,8 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-slate-50">
       <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-slate-200 bg-white px-5 py-6 lg:block">
         <div className="flex items-center gap-3 px-2">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 text-sm font-bold text-white">
-            SA
+          <div className="h-11 w-11 overflow-hidden rounded-lg border border-slate-200 bg-white p-1">
+            <SafeLogo size={36} className="h-full w-full object-contain" />
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-950">Statement</p>
@@ -45,21 +30,7 @@ export default async function DashboardLayout({
           </div>
         </div>
 
-        <nav className="mt-8 space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
-              >
-                <Icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <DashboardNav role={user.role} />
 
         <div className="absolute bottom-6 left-5 right-5">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -72,7 +43,7 @@ export default async function DashboardLayout({
         </div>
       </aside>
 
-      <div className="lg:pl-72">
+      <div className="min-w-0 lg:pl-72">
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between px-6 lg:px-8">
             <div>
@@ -88,9 +59,27 @@ export default async function DashboardLayout({
               System Online
             </div>
           </div>
+          <div className="flex gap-2 border-t border-slate-100 px-6 pb-3 pt-2 lg:hidden">
+            <Link href="/statement/sync" className="btn-primary px-3 py-2 text-xs font-semibold">
+              Sync
+            </Link>
+            <Link href="/statement/export" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+              Export
+            </Link>
+            {user.role === "ADMIN" ? (
+              <Link href="/users" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                Users
+              </Link>
+            ) : null}
+          </div>
         </header>
 
-        <main className="px-6 py-8 lg:px-8">{children}</main>
+        <main className="min-w-0 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-3 shadow-sm lg:hidden">
+            <DashboardNav role={user.role} compact />
+          </div>
+          {children}
+        </main>
       </div>
     </div>
   );

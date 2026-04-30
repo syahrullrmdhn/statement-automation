@@ -1,8 +1,8 @@
 import AdmZip from "adm-zip";
 import { mkdirSync } from "fs";
-import { join } from "path";
+import { basename, join } from "path";
 import { prisma } from "@/lib/db";
-import { buildStatementFileName } from "./patterns";
+import { buildStatementFileName, extractStatementDateToken } from "./patterns";
 
 type ExportParams = {
   title: string;
@@ -39,12 +39,10 @@ export async function exportStatement(params: ExportParams) {
       orderBy: { createdAt: "desc" },
     });
 
-    const timestamp = new Date()
-      .toISOString()
-      .replaceAll("-", "")
-      .replaceAll(":", "")
-      .replace("T", "_")
-      .slice(0, 15);
+    const now = new Date();
+    const todayDate = now.toISOString().slice(0, 10).replaceAll("-", "");
+    const clock = now.toTimeString().slice(0, 8).replaceAll(":", "");
+    const timestamp = `${todayDate}_${clock}`;
 
     const outputDir = join(storagePath, "exports");
     mkdirSync(outputDir, { recursive: true });
@@ -77,7 +75,10 @@ export async function exportStatement(params: ExportParams) {
         if (!entry) continue;
 
         const content = entry.getData();
-        const renamedFile = `${account}_${params.year}${params.month}_${timestamp}.htm`;
+        const statementDate =
+          extractStatementDateToken(basename(statementZip.s3Key)) || `${params.year}${params.month}01`;
+        const statementTime = now.toTimeString().slice(0, 8).replaceAll(":", "");
+        const renamedFile = `${account}_${statementDate}_${statementTime}.htm`;
         const pathInsideFinalZip = `${account}/${renamedFile}`;
 
         finalZip.addFile(pathInsideFinalZip, content);

@@ -10,7 +10,7 @@ function createPrismaClient() {
   const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
     },
     max: 5,
     idleTimeoutMillis: 30000,

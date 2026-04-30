@@ -14,7 +14,7 @@ const createUserSchema = z.object({
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Sesi Anda sudah berakhir. Silakan login kembali." }, { status: 401 });
   }
 
   const users = await prisma.user.findMany({
@@ -36,18 +36,18 @@ export async function GET() {
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Anda tidak memiliki akses untuk menambah user." }, { status: 403 });
   }
 
   const body = await req.json();
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+    return NextResponse.json({ message: "Data user baru belum lengkap atau formatnya belum sesuai." }, { status: 400 });
   }
 
   const existing = await prisma.user.findUnique({ where: { username: parsed.data.username } });
   if (existing) {
-    return NextResponse.json({ message: "Username already exists" }, { status: 409 });
+    return NextResponse.json({ message: "Username sudah digunakan. Silakan gunakan username lain." }, { status: 409 });
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);

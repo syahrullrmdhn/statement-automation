@@ -15,13 +15,13 @@ export async function PATCH(
 ) {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Anda tidak memiliki akses untuk mengubah data user." }, { status: 403 });
   }
 
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+    return NextResponse.json({ message: "Perubahan user belum valid. Mohon cek kembali input Anda." }, { status: 400 });
   }
 
   const { id } = await context.params;

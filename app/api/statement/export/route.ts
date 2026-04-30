@@ -14,14 +14,14 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
 
   if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Sesi Anda sudah berakhir. Silakan login kembali." }, { status: 401 });
   }
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+    return NextResponse.json({ message: "Data export belum lengkap atau formatnya belum sesuai." }, { status: 400 });
   }
 
   const result = await exportStatement({
