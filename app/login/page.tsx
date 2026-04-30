@@ -96,6 +96,7 @@ export default function LoginPage() {
             <div className="relative w-32 h-32">
               <Image
                 src="/3S_Logogram.png"
+                sizes="128px"
                 alt="3S Logo"
                 fill
                 className="object-contain"
