@@ -14,7 +14,12 @@ type ExportResult = {
   downloadUrl?: string;
 };
 
-export default function ExportStatementPage() {
+export default async function ExportStatementPage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+
   const [title, setTitle] = useState("Pantau");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [month, setMonth] = useState(
@@ -428,7 +433,7 @@ export default function ExportStatementPage() {
               onChange={(event) => setAccountText(event.target.value)}
               className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
               rows={8}
-              placeholder="1001&#10;1002&#10;1003"
+              placeholder="1001\n1002\n1003"
             />
           </div>
 
