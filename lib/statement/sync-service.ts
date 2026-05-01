@@ -3,6 +3,7 @@ import { basename, join } from "path";
 import { s3Client } from "@/lib/s3/client";
 import { downloadS3Object } from "@/lib/s3/download";
 import { prisma } from "@/lib/db";
+import { cacheGet, cacheSet } from "@/lib/cache";
 import { matchesStatementPeriod } from "./patterns";
 
 type SyncParams = {
@@ -53,15 +54,33 @@ export async function syncStatementFromS3(params: SyncParams) {
     for (const prefix of prefixes) {
       let continuationToken: string | undefined;
       let seenObjects = 0;
+      let isComplete = false;
 
       do {
-        const result = await s3Client.send(
-          new ListObjectsV2Command({
-            Bucket: bucket,
-            Prefix: prefix,
-            ContinuationToken: continuationToken,
-          })
-        );
+        // Cache key untuk S3 listing (prefix + continuationToken)
+        const s3CacheKey = `s3:list:${bucket}:${prefix}:${continuationToken || "first"}`;
+        let result = await cacheGet<any>(s3CacheKey);
+
+        if (!result) {
+          const rawResult = await s3Client.send(
+            new ListObjectsV2Command({
+              Bucket: bucket,
+              Prefix: prefix,
+              ContinuationToken: continuationToken,
+            })
+          );
+          result = {
+            Contents: rawResult.Contents?.map((obj) => ({
+              Key: obj.Key,
+              ETag: obj.ETag,
+              Size: Number(obj.Size),
+              LastModified: obj.LastModified?.toISOString(),
+            })),
+            NextContinuationToken: rawResult.NextContinuationToken,
+          };
+          // S3 listing cache 3 menit (tidak sering berubah)
+          await cacheSet(s3CacheKey, result, 180);
+        }
 
         seenObjects += result.Contents?.length || 0;
 
@@ -89,12 +108,13 @@ export async function syncStatementFromS3(params: SyncParams) {
             fileName,
             etag: object.ETag?.replaceAll('"', ""),
             size: Number(object.Size || 0),
-            lastModified: object.LastModified,
+            lastModified: object.LastModified ? new Date(object.LastModified) : undefined,
           });
         }
 
         continuationToken = result.NextContinuationToken;
-      } while (continuationToken);
+        isComplete = !result.NextContinuationToken;
+      } while (!isComplete);
 
       if (seenObjects > 0) {
         usedPrefix = prefix;
@@ -105,9 +125,7 @@ export async function syncStatementFromS3(params: SyncParams) {
     totalFound = candidates.length;
     await prisma.syncJob.update({
       where: { id: syncJob.id },
-      data: {
-        totalFound,
-      },
+      data: { totalFound },
     });
 
     for (let i = 0; i < candidates.length; i++) {
@@ -177,6 +195,9 @@ export async function syncStatementFromS3(params: SyncParams) {
         });
       }
     }
+
+    // Invalidate cache statement files setelah sync
+    await cacheSet(`statement:files:${params.year}:${params.month}`, null, 0);
 
     const status =
       totalFound === 0 ? "empty" : totalFailed > 0 ? "partial" : "success";

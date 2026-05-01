@@ -1,5 +1,5 @@
 import AdmZip from "adm-zip";
-import { mkdirSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { basename, join } from "path";
 import { prisma } from "@/lib/db";
 import { buildStatementFileName, extractStatementDateToken } from "./patterns";
@@ -66,8 +66,15 @@ export async function exportStatement(params: ExportParams) {
 
       for (const statementZip of zipFiles) {
         if (!statementZip.localPath) continue;
+        if (!existsSync(statementZip.localPath)) continue;
 
-        const zip = new AdmZip(statementZip.localPath);
+        let zip;
+        try {
+          zip = new AdmZip(statementZip.localPath);
+        } catch {
+          // Skip corrupted or invalid zip files
+          continue;
+        }
         const entry = zip
           .getEntries()
           .find((item) => item.entryName.endsWith(targetFileName));

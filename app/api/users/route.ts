@@ -42,7 +42,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: "Data user baru belum lengkap atau formatnya belum sesuai." }, { status: 400 });
+    return NextResponse.json({
+      message: "Data user baru belum lengkap atau formatnya belum sesuai.",
+      errors: parsed.error.flatten().fieldErrors,
+    }, { status: 400 });
   }
 
   const existing = await prisma.user.findUnique({ where: { username: parsed.data.username } });

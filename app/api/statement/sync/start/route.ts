@@ -26,6 +26,7 @@ export async function POST(req: Request) {
 
   let createdJobId = "";
 
+  // Jalankan sync di background, response langsung cepat
   const jobPromise = syncStatementFromS3({
     year: parsed.data.year,
     month: parsed.data.month,
@@ -37,12 +38,15 @@ export async function POST(req: Request) {
     },
   });
 
-  void jobPromise.catch(() => null);
-
+  // Tidak perlu await — biar jalan di background
+  // Tapi kita perlu jobId yang sudah dibuat
   const start = Date.now();
   while (!createdJobId && Date.now() - start < 5000) {
     await new Promise((resolve) => setTimeout(resolve, 30));
   }
+
+  // Jangan await jobPromise — background processing
+  jobPromise.catch(() => null);
 
   return NextResponse.json({
     jobId: createdJobId || null,

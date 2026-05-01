@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start-worker": "node worker.js",
     "lint": "eslint"
   },
   "prisma": {
@@ -17,7 +18,9 @@
     "@prisma/client": "^7.8.0",
     "adm-zip": "^0.5.17",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^5.41.1",
     "dotenv-cli": "^11.0.0",
+    "ioredis": "^5.10.1",
     "jose": "^6.2.3",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
