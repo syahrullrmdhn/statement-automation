@@ -20,10 +20,12 @@ type SyncResult = {
 const ACTIVE_SYNC_JOB_KEY = "active_sync_job_id";
 
 export default function StatementSyncPage() {
-  const [year, setYear] = useState(new Date().getFullYear().toString());
-  const [month, setMonth] = useState(
-    String(new Date().getMonth() + 1).padStart(2, "0")
-  );
+  const today = new Date();
+  const defaultFrom = new Date(today);
+  defaultFrom.setDate(defaultFrom.getDate() - 7); // default 7 hari ke belakang
+
+  const [fromDate, setFromDate] = useState(() => defaultFrom.toISOString().split("T")[0]);
+  const [toDate, setToDate] = useState(() => today.toISOString().split("T")[0]);
   const [server, setServer] = useState("ALL");
   const [force, setForce] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -110,7 +112,7 @@ export default function StatementSyncPage() {
       const response = await fetch("/api/statement/sync/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ year, month, server, force }),
+        body: JSON.stringify({ fromDate, toDate, server, force }),
       });
 
       const data = await response.json();
@@ -184,7 +186,7 @@ export default function StatementSyncPage() {
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Panduan Singkat</p>
         <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-3">
-          <p className="rounded-lg bg-slate-50 px-3 py-2">1. Pilih tahun, bulan, dan server.</p>
+          <p className="rounded-lg bg-slate-50 px-3 py-2">1. Pilih rentang tanggal dan server.</p>
           <p className="rounded-lg bg-slate-50 px-3 py-2">2. Klik Mulai Sinkronisasi.</p>
           <p className="rounded-lg bg-slate-50 px-3 py-2">3. Pantau progress, lalu lanjut ke Export.</p>
         </div>
@@ -219,20 +221,22 @@ export default function StatementSyncPage() {
       >
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <div>
-            <label className="text-sm font-medium text-slate-700">Tahun</label>
+            <label className="text-sm font-medium text-slate-700">Dari Tanggal</label>
             <input
-              value={year}
-              onChange={(event) => setYear(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
+              type="date"
+              value={fromDate}
+              onChange={(event) => setFromDate(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700">Bulan</label>
+            <label className="text-sm font-medium text-slate-700">Sampai Tanggal</label>
             <input
-              value={month}
-              onChange={(event) => setMonth(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
+              type="date"
+              value={toDate}
+              onChange={(event) => setToDate(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-100"
             />
           </div>
 

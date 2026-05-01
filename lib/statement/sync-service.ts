@@ -4,11 +4,11 @@ import { s3Client } from "@/lib/s3/client";
 import { downloadS3Object } from "@/lib/s3/download";
 import { prisma } from "@/lib/db";
 import { cacheGet, cacheSet } from "@/lib/cache";
-import { matchesStatementPeriod } from "./patterns";
+import { matchesStatementDateRange, extractDateFromFileName } from "./patterns";
 
 type SyncParams = {
-  year: string;
-  month: string;
+  fromDate: string; // YYYY-MM-DD
+  toDate: string;   // YYYY-MM-DD
   server?: string;
   force?: boolean;
   createdBy?: string;
@@ -39,10 +39,14 @@ export async function syncStatementFromS3(params: SyncParams) {
   const storagePath = process.env.APP_STORAGE_PATH || "./storage";
   const prefixes = buildPrefixCandidates(configuredPrefix);
 
+  // Derive year/month from fromDate for backward compatibility in DB
+  const fromYear = params.fromDate.slice(0, 4);
+  const fromMonth = params.fromDate.slice(5, 7);
+
   const syncJob = await prisma.syncJob.create({
     data: {
-      periodYear: params.year,
-      periodMonth: params.month,
+      periodYear: fromYear,
+      periodMonth: fromMonth,
       serverName: params.server,
       mode: "manual",
       status: "running",
@@ -99,13 +103,8 @@ export async function syncStatementFromS3(params: SyncParams) {
 
           const key = object.Key;
           const fileName = basename(key);
-          const lowerKey = key.toLowerCase();
 
-          if (!matchesStatementPeriod(fileName, params.year, params.month)) {
-            continue;
-          }
-
-          if (!lowerKey.includes(`/${params.year}/`) && !lowerKey.includes(params.year)) {
+          if (!matchesStatementDateRange(fileName, params.fromDate, params.toDate)) {
             continue;
           }
 
@@ -154,12 +153,17 @@ export async function syncStatementFromS3(params: SyncParams) {
       } else {
         try {
           const serverName = extractServerName(candidate.key, usedPrefix);
+          // Extract file date for folder structure
+          const fileDate = extractDateFromFileName(candidate.fileName);
+          const fileYear = fileDate ? fileDate.slice(0, 4) : fromYear;
+          const fileMonth = fileDate ? fileDate.slice(5, 7) : fromMonth;
+
           const localPath = join(
             storagePath,
             "s3-cache",
             serverName,
-            params.year,
-            params.month,
+            fileYear,
+            fileMonth,
             candidate.fileName
           );
 
@@ -169,8 +173,8 @@ export async function syncStatementFromS3(params: SyncParams) {
             where: { s3Key: candidate.key },
             create: {
               serverName,
-              periodYear: params.year,
-              periodMonth: params.month,
+              periodYear: fileYear,
+              periodMonth: fileMonth,
               s3Bucket: bucket,
               s3Key: candidate.key,
               s3Etag: candidate.etag,
@@ -207,7 +211,7 @@ export async function syncStatementFromS3(params: SyncParams) {
     }
 
     // Invalidate cache statement files setelah sync
-    await cacheSet(`statement:files:${params.year}:${params.month}`, null, 0);
+    await cacheSet(`statement:files:${fromYear}:${fromMonth}`, null, 0);
 
     const status =
       totalFound === 0 ? "empty" : totalFailed > 0 ? "partial" : "success";

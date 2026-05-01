@@ -4,8 +4,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { syncStatementFromS3 } from "@/lib/statement/sync-service";
 
 const schema = z.object({
-  year: z.string().regex(/^\d{4}$/),
-  month: z.string().regex(/^\d{2}$/),
+  fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   server: z.string().optional(),
   force: z.boolean().optional(),
 });
@@ -28,8 +28,8 @@ export async function POST(req: Request) {
 
   // Jalankan sync di background, response langsung cepat
   const jobPromise = syncStatementFromS3({
-    year: parsed.data.year,
-    month: parsed.data.month,
+    fromDate: parsed.data.fromDate,
+    toDate: parsed.data.toDate,
     server: parsed.data.server === "ALL" ? undefined : parsed.data.server,
     force: parsed.data.force,
     createdBy: user.username,
