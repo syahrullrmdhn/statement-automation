@@ -10,8 +10,28 @@ type ExportParams = {
   month: string;
   server?: string;
   accounts: string[];
+  specificDate?: string;
+  rangeStart?: string;
+  rangeEnd?: string;
+  lookbackDays?: number;
   createdBy?: string;
 };
+
+function toDateToken(value: string) {
+  return value.replaceAll("-", "");
+}
+
+function shiftDateToken(dateToken: string, days: number) {
+  const year = Number(dateToken.slice(0, 4));
+  const month = Number(dateToken.slice(4, 6)) - 1;
+  const day = Number(dateToken.slice(6, 8));
+  const d = new Date(Date.UTC(year, month, day));
+  d.setUTCDate(d.getUTCDate() + days);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}${m}${dd}`;
+}
 
 export async function exportStatement(params: ExportParams) {
   const storagePath = process.env.APP_STORAGE_PATH || "./storage";
@@ -29,7 +49,7 @@ export async function exportStatement(params: ExportParams) {
   });
 
   try {
-    const zipFiles = await prisma.statementFile.findMany({
+    const rawZipFiles = await prisma.statementFile.findMany({
       where: {
         periodYear: params.year,
         periodMonth: params.month,
@@ -37,6 +57,30 @@ export async function exportStatement(params: ExportParams) {
         syncStatus: "synced",
       },
       orderBy: { createdAt: "desc" },
+    });
+
+    const specificDateToken = params.specificDate ? toDateToken(params.specificDate) : "";
+    const rangeStartToken = params.rangeStart ? toDateToken(params.rangeStart) : "";
+    const rangeEndToken = params.rangeEnd ? toDateToken(params.rangeEnd) : "";
+    const lookbackDays = params.lookbackDays || 0;
+
+    const zipFiles = rawZipFiles.filter((item) => {
+      const token = extractStatementDateToken(basename(item.s3Key)) || `${params.year}${params.month}01`;
+
+      if (rangeStartToken && rangeEndToken) {
+        return token >= rangeStartToken && token <= rangeEndToken;
+      }
+
+      if (specificDateToken && lookbackDays > 0) {
+        const start = shiftDateToken(specificDateToken, -lookbackDays);
+        return token >= start && token <= specificDateToken;
+      }
+
+      if (specificDateToken) {
+        return token === specificDateToken;
+      }
+
+      return true;
     });
 
     const now = new Date();

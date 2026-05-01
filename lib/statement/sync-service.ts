@@ -23,6 +23,16 @@ type S3Candidate = {
   lastModified?: Date;
 };
 
+type CachedS3ListResult = {
+  Contents?: Array<{
+    Key?: string;
+    ETag?: string;
+    Size?: number;
+    LastModified?: string;
+  }>;
+  NextContinuationToken?: string;
+};
+
 export async function syncStatementFromS3(params: SyncParams) {
   const bucket = process.env.S3_BUCKET!;
   const configuredPrefix = process.env.S3_STATEMENT_PREFIX || "";
@@ -59,7 +69,7 @@ export async function syncStatementFromS3(params: SyncParams) {
       do {
         // Cache key untuk S3 listing (prefix + continuationToken)
         const s3CacheKey = `s3:list:${bucket}:${prefix}:${continuationToken || "first"}`;
-        let result = await cacheGet<any>(s3CacheKey);
+        let result = await cacheGet<CachedS3ListResult>(s3CacheKey);
 
         if (!result) {
           const rawResult = await s3Client.send(

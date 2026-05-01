@@ -22,6 +22,10 @@ export default function ExportStatementPage() {
   );
   const [dealerEmailText, setDealerEmailText] = useState("");
   const [accountText, setAccountText] = useState("");
+  const [batchSpecificDate, setBatchSpecificDate] = useState("");
+  const [batchRangeStart, setBatchRangeStart] = useState("");
+  const [batchRangeEnd, setBatchRangeEnd] = useState("");
+  const [batchUseLookback20, setBatchUseLookback20] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ExportResult | null>(null);
   const [error, setError] = useState("");
@@ -30,8 +34,92 @@ export default function ExportStatementPage() {
   const [searchAccount, setSearchAccount] = useState("");
   const [searchYear, setSearchYear] = useState(new Date().getFullYear().toString());
   const [searchMonth, setSearchMonth] = useState(String(new Date().getMonth() + 1).padStart(2, "0"));
+  const [searchDate, setSearchDate] = useState("");
+  const [searchRangeStart, setSearchRangeStart] = useState("");
+  const [searchRangeEnd, setSearchRangeEnd] = useState("");
+  const [useLookback20, setUseLookback20] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResult, setSearchResult] = useState<{ found: boolean; message?: string; serverName?: string; fileName?: string; downloadUrl?: string } | null>(null);
+
+  function formatDateInput(date: Date) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  function applyPreset(type: "today" | "last7" | "last20" | "thisMonth") {
+    const now = new Date();
+    const yyyy = String(now.getFullYear());
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    setSearchYear(yyyy);
+    setSearchMonth(mm);
+
+    if (type === "today") {
+      setSearchDate(formatDateInput(now));
+      setUseLookback20(false);
+      setSearchRangeStart("");
+      setSearchRangeEnd("");
+      return;
+    }
+
+    if (type === "last7") {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 6);
+      setSearchDate("");
+      setUseLookback20(false);
+      setSearchRangeStart(formatDateInput(start));
+      setSearchRangeEnd(formatDateInput(now));
+      return;
+    }
+
+    if (type === "last20") {
+      setSearchDate(formatDateInput(now));
+      setUseLookback20(true);
+      setSearchRangeStart("");
+      setSearchRangeEnd("");
+      return;
+    }
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    setSearchDate("");
+    setUseLookback20(false);
+    setSearchRangeStart(formatDateInput(startOfMonth));
+    setSearchRangeEnd(formatDateInput(now));
+  }
+
+  function applyBatchPreset(type: "today" | "last7" | "last20" | "thisMonth") {
+    const now = new Date();
+
+    if (type === "today") {
+      setBatchSpecificDate(formatDateInput(now));
+      setBatchUseLookback20(false);
+      setBatchRangeStart("");
+      setBatchRangeEnd("");
+      return;
+    }
+
+    if (type === "last7") {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 6);
+      setBatchSpecificDate("");
+      setBatchUseLookback20(false);
+      setBatchRangeStart(formatDateInput(start));
+      setBatchRangeEnd(formatDateInput(now));
+      return;
+    }
+
+    if (type === "last20") {
+      setBatchSpecificDate(formatDateInput(now));
+      setBatchUseLookback20(true);
+      setBatchRangeStart("");
+      setBatchRangeEnd("");
+      return;
+    }
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    setBatchSpecificDate("");
+    setBatchUseLookback20(false);
+    setBatchRangeStart(formatDateInput(startOfMonth));
+    setBatchRangeEnd(formatDateInput(now));
+  }
 
   async function handleExport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,7 +144,21 @@ export default function ExportStatementPage() {
       const response = await fetch("/api/statement/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, year, month, accounts }),
+        body: JSON.stringify({
+          title,
+          year,
+          month,
+          accounts,
+          specificDate: batchSpecificDate || undefined,
+          rangeStart: batchRangeStart || undefined,
+          rangeEnd: batchRangeEnd || undefined,
+          lookbackDays:
+            batchRangeStart && batchRangeEnd
+              ? undefined
+              : batchSpecificDate && batchUseLookback20
+              ? 20
+              : undefined,
+        }),
       });
 
       console.log("📥 Response received:", response.status, response.statusText);
@@ -98,9 +200,20 @@ export default function ExportStatementPage() {
     setSearchLoading(true);
     setSearchResult(null);
     try {
-      const response = await fetch(
-        `/api/statement/search?account=${encodeURIComponent(searchAccount.trim())}&year=${searchYear}&month=${searchMonth}`
-      );
+      const params = new URLSearchParams({
+        account: searchAccount.trim(),
+        year: searchYear,
+        month: searchMonth,
+      });
+      if (searchDate) params.set("date", searchDate);
+      if (searchRangeStart && searchRangeEnd) {
+        params.set("rangeStart", searchRangeStart);
+        params.set("rangeEnd", searchRangeEnd);
+      } else if (searchDate && useLookback20) {
+        params.set("lookbackDays", "20");
+      }
+
+      const response = await fetch(`/api/statement/search?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) {
         setSearchResult({ found: false, message: humanizeMessage(data.message || "Statement tidak ditemukan.") });
@@ -126,30 +239,85 @@ export default function ExportStatementPage() {
       <Modal
         open={showSearchModal}
         title="Cari 1 Statement (.htm)"
-        description="Cari file statement berdasarkan account dan periode"
+        description="Pencarian exact account + tanggal spesifik, range tanggal, atau 20 hari ke belakang"
         onClose={() => setShowSearchModal(false)}
       >
         <form onSubmit={handleSearchStatement} className="space-y-3">
-          <input
-            value={searchAccount}
-            onChange={(event) => setSearchAccount(event.target.value)}
-            placeholder="Nomor account"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
-          />
-          <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Preset Cepat</p>
+            <div className="mt-1 flex flex-wrap gap-2">
+              <button type="button" onClick={() => applyPreset("today")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Hari Ini</button>
+              <button type="button" onClick={() => applyPreset("last7")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">7 Hari</button>
+              <button type="button" onClick={() => applyPreset("last20")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">20 Hari</button>
+              <button type="button" onClick={() => applyPreset("thisMonth")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Bulan Ini</button>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account Exact</label>
             <input
-              value={searchYear}
-              onChange={(event) => setSearchYear(event.target.value)}
-              placeholder="Tahun (YYYY)"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
-            />
-            <input
-              value={searchMonth}
-              onChange={(event) => setSearchMonth(event.target.value)}
-              placeholder="Bulan (MM)"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+              value={searchAccount}
+              onChange={(event) => setSearchAccount(event.target.value)}
+              placeholder="Nomor account (exact)"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Tahun</label>
+              <input
+                value={searchYear}
+                onChange={(event) => setSearchYear(event.target.value)}
+                placeholder="YYYY"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Bulan</label>
+              <input
+                value={searchMonth}
+                onChange={(event) => setSearchMonth(event.target.value)}
+                placeholder="MM"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Tanggal Spesifik</label>
+              <input
+                type="date"
+                value={searchDate}
+                onChange={(event) => setSearchDate(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs text-slate-600">
+              <input
+                type="checkbox"
+                checked={useLookback20}
+                onChange={(event) => setUseLookback20(event.target.checked)}
+              />
+              Cari sampai 20 hari ke belakang dari tanggal spesifik
+            </label>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Range Date</p>
+            <div className="mt-1 grid grid-cols-2 gap-3">
+              <input
+                type="date"
+                value={searchRangeStart}
+                onChange={(event) => setSearchRangeStart(event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+              />
+              <input
+                type="date"
+                value={searchRangeEnd}
+                onChange={(event) => setSearchRangeEnd(event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-slate-500">Jika range diisi, sistem pakai range. Jika tidak, sistem pakai tanggal spesifik (exact atau 20 hari ke belakang).</p>
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setShowSearchModal(false)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50">Tutup</button>
             <button disabled={searchLoading} className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 disabled:opacity-60">
@@ -262,6 +430,58 @@ export default function ExportStatementPage() {
               rows={8}
               placeholder="1001&#10;1002&#10;1003"
             />
+          </div>
+
+          <div className="md:col-span-2">
+            <p className="text-sm font-medium text-slate-700">Filter Tanggal Batch (Opsional)</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" onClick={() => applyBatchPreset("today")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Hari Ini</button>
+              <button type="button" onClick={() => applyBatchPreset("last7")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">7 Hari</button>
+              <button type="button" onClick={() => applyBatchPreset("last20")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">20 Hari</button>
+              <button type="button" onClick={() => applyBatchPreset("thisMonth")} className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Bulan Ini</button>
+            </div>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-xs text-slate-500">Tanggal spesifik</label>
+                <input
+                  type="date"
+                  value={batchSpecificDate}
+                  onChange={(event) => setBatchSpecificDate(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+                />
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={batchUseLookback20}
+                    onChange={(event) => setBatchUseLookback20(event.target.checked)}
+                  />
+                  Cari 20 hari ke belakang dari tanggal spesifik
+                </label>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-xs text-slate-500">Range start</label>
+                <input
+                  type="date"
+                  value={batchRangeStart}
+                  onChange={(event) => setBatchRangeStart(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500">Range end</label>
+                <input
+                  type="date"
+                  value={batchRangeEnd}
+                  onChange={(event) => setBatchRangeEnd(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Prioritas filter: range date &gt; tanggal spesifik + 20 hari &gt; tanggal spesifik exact.</p>
           </div>
         </div>
 
