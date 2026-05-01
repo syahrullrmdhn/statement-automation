@@ -105,7 +105,7 @@ export async function syncStatementFromS3(params: SyncParams) {
             continue;
           }
 
-          if (!lowerKey.includes(`/${params.year}/`)) {
+          if (!lowerKey.includes(`/${params.year}/`) && !lowerKey.includes(params.year)) {
             continue;
           }
 

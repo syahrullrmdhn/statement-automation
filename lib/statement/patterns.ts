@@ -5,7 +5,7 @@ export function matchesStatementPeriod(
 ) {
   const lower = fileName.toLowerCase();
 
-  if (!lower.endsWith(".zip")) {
+  if (!lower.endsWith(".zip") && !lower.endsWith(".htm")) {
     return false;
   }
 
