@@ -14,11 +14,7 @@ type ExportResult = {
   downloadUrl?: string;
 };
 
-export default async function ExportStatementPage() {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/login");
-  }
+export default function ExportStatementPage() {
 
   const [title, setTitle] = useState("Pantau");
   const [year, setYear] = useState(new Date().getFullYear().toString());
