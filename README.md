@@ -1,112 +1,92 @@
 # Statement Automation System
 
-Aplikasi web internal untuk membantu proses sinkronisasi dan ekspor file statement dari Amazon S3.
-
-## Setup Instruction
-
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-### 2. Environment Variables
-
-Environment variables sudah dikonfigurasi di file `.env.local`:
-- Database: Supabase PostgreSQL (pooler)
-- AWS S3: Bucket `petisejuk`
-- AWS Region: `ap-southeast-3`
-- S3 prefix utama: `STATEMENT/`
-
-### 3. Setup Database
-
-Jalankan migration Prisma:
-
-```bash
-npx dotenv -e .env.local -- npx prisma migrate dev --name init
-```
-
-Generate Prisma client:
-
-```bash
-npx prisma generate
-```
-
-Seed default admin user:
-
-```bash
-npx tsx prisma/seed.ts
-```
-
-### 4. Start Development Server
-
-```bash
-npm run dev
-```
-
-Buka browser di `http://localhost:3000`
-
-Jika muncul pesan "Another next dev server is already running", stop dulu proses lama:
-
-```bash
-pkill -f "next dev"
-```
-
-### 5. Login
-
-Gunakan kredensial default:
-- **Username**: `syahrul`
-- **Password**: `syahrul2026`
+A full-stack web application for automating statement exports with advanced search, secure authentication, and detailed export history.
 
 ## Features
 
-- **Dashboard**: Overview sistem dengan statistik
-- **Statement Sync**: Sinkronisasi file dari S3 ke local storage
-- **Export Statement**: Generate ZIP berdasarkan periode dan daftar account
-- **Auto Extract Account**: Bisa paste isi email dealer lalu account number diekstrak otomatis
-- **User Management**: Kelola user, role, status aktif, dan reset password
-- **Export History**: Riwayat proses export
-- **Settings**: Informasi konfigurasi sistem
+- ✅ **Exact Match Search** — Search is now exact, not contains
+- 📅 **Flexible Date Filtering** — Support for:
+  - Specific date: `2025-04-05`
+  - Date range: `2025-04-01..2025-04-05`
+  - Last 20 days from target date: `2025-04-05` → `2025-03-16` to `2025-04-05`
+- 👤 **Export History** — Logs the name of the user who performed the export
+- 🔐 **Secure JWT Authentication** — JWT secret generated with `openssl rand -hex 64`
+- 🐳 **Dockerized Deployment** — Full containerized setup with Nginx reverse proxy
 
-## Automation
+## Deployment
 
-### 1. Auto sync jam 07:00 Asia/Jakarta
+### 1. Prerequisites
+- Node.js 22+
+- Docker & Docker Compose
+- Nginx with Let's Encrypt SSL
+- `openssl` for JWT secret generation
 
-Disediakan endpoint cron:
+### 2. Setup
+```bash
+# Generate JWT secret
+openssl rand -hex 64
 
-`POST /api/cron/sync-daily`
+# Copy the secret to .env.local
+# Example:
+# JWT_SECRET=your-generated-secret-here
 
-Header wajib:
-
-- `x-cron-secret: <CRON_SECRET>`
-
-Env yang perlu ditambahkan di `.env.local`:
-
-```env
-CRON_SECRET="ganti_dengan_secret_aman"
+# Build and start
+npm run build
+npm run start
 ```
 
-Contoh setup external cron (server/cPanel/cron-job.org):
+### 3. Nginx Configuration
+Ensure your Nginx config includes:
+```nginx
+server {
+    server_name statement.mastolongin.web.id;
+    client_max_body_size 50m;
 
-- Schedule: `0 7 * * *` (Asia/Jakarta)
-- Method: `POST`
-- URL: `https://your-domain.com/api/cron/sync-daily`
-- Header: `x-cron-secret: <CRON_SECRET>`
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
 
-## Stack Teknologi
+    listen 443 ssl;
+    ssl_certificate ...;
+    ssl_certificate_key ...;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+```
 
-- Next.js 16 App Router
-- TypeScript
-- Tailwind CSS 4
-- Prisma ORM
-- PostgreSQL
-- AWS SDK v3 (S3)
-- JWT Authentication
+### 4. Docker Compose
+```yaml
+services:
+  statement-automation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: statement-automation
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - /home/ubuntu/statement-automation/storage:/app/storage
+```
 
-## Catatan
+## Troubleshooting
 
-- Credentials database dan S3 sudah disertakan dalam `.env.local`
-- File `.env.local` sudah diignore dari Git
-- Local storage akan dibuat otomatis di folder `./storage/`
-- URL dashboard yang benar adalah `/dashboard` (bukan `/(dashboard)`)
-- Jika hasil sync `empty`, cek parameter year/month/server dan prefix S3
+| Issue | Solution |
+|------|----------|
+| `ADM-ZIP: Invalid filename` | Add `existsSync()` check and try-catch around file operations |
+| `PrismaClientKnownRequestError: ECONNREFUSED` | Set `rejectUnauthorized: false` in Prisma client for Supabase SSL |
+| `EACCES: permission denied` | Use bind mount and set `777` permissions on host storage dir |
+| `Error: Cannot find module 'ioredis'` | Copy full `node_modules` in Dockerfile runner stage |
+
+## License
+MIT
