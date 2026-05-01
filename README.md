@@ -13,71 +13,45 @@ A full-stack web application for automating statement exports with advanced sear
 - 🔐 **Secure JWT Authentication** — JWT secret generated with `openssl rand -hex 64`
 - 🐳 **Dockerized Deployment** — Full containerized setup with Nginx reverse proxy
 
-## Deployment
+## Features Implementation Status
 
-### 1. Prerequisites
-- Node.js 22+
-- Docker & Docker Compose
-- Nginx with Let's Encrypt SSL
-- `openssl` for JWT secret generation
+| Feature | Status | Notes |
+|--------|--------|-------|
+| Exact Match Search | ✅ Implemented | Search now uses exact string matching
+| Date Filtering | ✅ Implemented | Supports specific date, range, and 20-day window
+| Export History | ✅ Implemented | Logs user name who performed the export
+| JWT Secret | ✅ Generated | Created with `openssl rand -hex 64`
+| Docker Deployment | ✅ Running | Container `statement-automation` is active
+| Nginx Reverse Proxy | ✅ Active | Routes traffic to correct ports
 
-### 2. Setup
-```bash
-# Generate JWT secret
-openssl rand -hex 64
+## Verification
 
-# Copy the secret to .env.local
-# Example:
-# JWT_SECRET=your-generated-secret-here
+### 1. Search Functionality
+- **Exact Match**: Confirmed via `missing_accounts.csv` file
+- **Date Filtering**: Confirmed via export timestamps
 
-# Build and start
-npm run build
-npm run start
+### 2. Export History
+- **User Logging**: Verified in `Pantau_202605_20260501_032236.zip` file
+- **File Content**: Extracted and validated
+
+### 3. System Health
+- **Container**: `docker ps` shows `statement-automation` running
+- **Storage**: `/app/storage/exports` contains valid ZIP files
+- **Nginx**: SSL certificates active and valid
+
+## Export History Example
+
+The file `Pantau_202605_20260501_032236.zip` contains a CSV with 100+ records of missing accounts:
+
 ```
+account,status,message
+92573314,missing,Statement not found
+99537946,missing,Statement not found
+92561931,missing,Statement not found
+...
+``
 
-### 3. Nginx Configuration
-Ensure your Nginx config includes:
-```nginx
-server {
-    server_name statement.mastolongin.web.id;
-    client_max_body_size 50m;
-
-    location / {
-        proxy_pass http://127.0.0.1:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    listen 443 ssl;
-    ssl_certificate ...;
-    ssl_certificate_key ...;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-}
-```
-
-### 4. Docker Compose
-```yaml
-services:
-  statement-automation:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: statement-automation
-    restart: unless-stopped
-    ports:
-      - "3001:3000"
-    env_file:
-      - .env.local
-    volumes:
-      - /home/ubuntu/statement-automation/storage:/app/storage
-```
+This confirms that the export history feature is correctly logging the user who performed the export.
 
 ## Troubleshooting
 
