@@ -1,0 +1,46 @@
+services:
+  statement-automation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: statement-automation
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - /home/ubuntu/statement-automation/storage:/app/storage
+    depends_on:
+      redis:
+        condition: service_started
+    networks:
+      - statement-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: statement-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --save 60 1 --lazyfree-lazy-eviction yes
+    networks:
+      - statement-net
+    volumes:
+      - statement-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  statement-redis:
+
+networks:
+  statement-net:
+    driver: bridge

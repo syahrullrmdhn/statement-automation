@@ -35,38 +35,55 @@ export default function ExportStatementPage() {
 
   async function handleExport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    console.log("🚀 Starting export process...");
     setLoading(true);
     setError("");
     setResult(null);
 
     const accounts = extractAccountsFromText(accountText).map((item) => item.trim());
+    console.log("📋 Accounts to export:", accounts.length, accounts);
+
+    if (accounts.length === 0) {
+      const message = "Tidak ada account yang diexport. Mohon isi minimal satu nomor account.";
+      setError(message);
+      setToast({ type: "error", message });
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log("📤 Sending request to API...");
       const response = await fetch("/api/statement/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, year, month, accounts }),
       });
 
+      console.log("📥 Response received:", response.status, response.statusText);
       const data = await response.json();
+      console.log("📦 Response data:", data);
 
       if (!response.ok) {
         const message = humanizeMessage(data.message || "Export belum berhasil.");
+        console.error("❌ Export failed:", message);
         setError(message);
         setToast({ type: "error", message });
         return;
       }
 
+      console.log("✅ Export successful, setting result...");
       setResult(data);
       setToast({
         type: "success",
-        message: "Export selesai. Silakan unduh file ZIP hasilnya.",
+        message: `Export selesai! ${data.foundAccounts}/${data.totalAccounts} statement berhasil diexport.`,
       });
-    } catch {
+    } catch (err) {
+      console.error("❌ Export error:", err);
       const message = "Export belum bisa diproses. Coba lagi beberapa saat.";
       setError(message);
       setToast({ type: "error", message });
     } finally {
+      console.log("🏁 Export process finished");
       setLoading(false);
     }
   }

@@ -1,0 +1,14 @@
+node_modules
+.git
+.gitignore
+README.md
+.next
+!prisma
+*.md
+setup.bat
+setup.sh
+MIGRATION_USERNAME.md
+PROJECT_OVERVIEW.md
+QUICK_START.md
+AGENTS.md
+CLAUDE.md
